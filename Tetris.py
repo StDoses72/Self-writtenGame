@@ -10,6 +10,11 @@ def onAppStart(app):
     app.boardWidth = 300
     app.boardHeight = 400
     app.cellBorderWidth = 2
+    restart(app)
+    app.stepsPerSecond=3
+    
+    
+def restart(app):
     app.board = [([None] * app.cols) for row in range(app.rows)]
     loadTetrisPieces(app)
     loadPiece(app,0)
@@ -19,14 +24,20 @@ def onAppStart(app):
     app.pieceLeftCol = app.cols//2-len(app.piece)//2
     app.nextPieceIndex = random.randrange(len(app.tetrisPieces))
     loadNextPiece(app)
-    app.stepsPerSecond=3
+    app.score = 0
+    app.isGameOver = False
     app.isPaused =False
-
 def redrawAll(app):
-    drawLabel('Tetris (Step 7)', 200, 30, size=16)
+    drawLabel('Tetris', 65, 30, size=16)
+    drawLabel('Your current score is: '+str(app.score),280,30,size=16)
     drawBoard(app)
     drawPiece(app)
     drawBoardBorder(app)
+    if app.isGameOver:
+        drawLabel('Game Over',200,150,size=30,fill='red',bold=True)
+        drawLabel('Your Score is '+str(app.score),200,200,size=30,fill='red',bold=True)
+        drawLabel('Press r to restart the game!',200,250,size=30,fill='red',bold=True)
+        
 
     
 
@@ -104,6 +115,8 @@ def onKeyPress(app,key):
         loadTestBoard(app, key)
     elif key == 'p':
         app.isPaused = not app.isPaused
+    elif key == 'r':
+        restart(app)
         
         
 def loadTestBoard(app, key):
@@ -215,8 +228,12 @@ def takeStep(app):
     if not movePiece(app, +1, 0):
         # We could not move the piece, so place it on the board:
         placePieceOnBoard(app)
+        if isGameOver(app):
+            app.isGameOver = True
+        else:
+            loadNextPiece(app)
         removeFullRows(app)
-        loadNextPiece(app)
+        
         
    
 def loadNextPiece(app):
@@ -234,6 +251,8 @@ def placePieceOnBoard(app):
                     app.board[boardRow][boardCol] = app.pieceColor
                     
 def removeFullRows(app):
+    score = 0
+    numOfPoped = 0
     numOfTrue=0
     for row in range(app.rows):
         for col in range(app.cols):
@@ -242,11 +261,20 @@ def removeFullRows(app):
                 if numOfTrue == app.cols:
                     app.board.pop(row)
                     app.board.insert(0,[None]*app.cols)
-                    
+                    numOfPoped +=1
         numOfTrue=0
+    score = numOfPoped**2 
+    app.score+=score
 def onStep(app):
     if not app.isPaused:
         takeStep(app)
+
+def isGameOver(app):
+    for row in range(app.rows):
+        for col in range(app.cols):
+            if (app.board[row][col] is not None) and row<1:
+                return True
+    return False
 def main():
     # app = runApp()
     runApp()
